@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BioLearn</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:20px;display:grid;place-items:center;font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0}
+.shell{width:min(980px,100%);height:min(820px,94vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #334155;border-radius:28px;background:rgba(255,255,255,.06);box-shadow:0 25px 70px rgba(0,0,0,.2);backdrop-filter:blur(16px)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:18px 22px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800}
+.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#22d3ee,#6366f1);color:white;font-weight:900}
+.status{font-size:12px;opacity:.65}
+.hero{margin:0 18px 10px;padding:20px;border-radius:20px;border:1px solid #334155;background:linear-gradient(135deg,#22d3ee18,#6366f118)}
+.hero h1{margin:0 0 6px;font-size:25px}
+.hero p{margin:0;opacity:.7;font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{padding:7px 10px;border-radius:999px;background:rgba(127,127,127,.12);font-size:11px}
+.chat{flex:1;overflow:auto;padding:16px 22px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:78%;padding:12px 15px;border-radius:18px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.bot{align-self:flex-start;border:1px solid #334155;background:rgba(127,127,127,.10);border-bottom-left-radius:5px}
+.user{align-self:flex-end;background:linear-gradient(135deg,#22d3ee,#6366f1);color:white;border-bottom-right-radius:5px}
+.typing{display:none;padding:0 24px 8px;font-size:12px;opacity:.6}
+.composer{display:flex;gap:10px;padding:15px 18px;border-top:1px solid #334155}
+textarea{flex:1;resize:none;min-height:52px;max-height:130px;padding:14px;border:1px solid #334155;border-radius:16px;background:rgba(127,127,127,.08);color:inherit;font:inherit;outline:none}
+button{border:0;border-radius:16px;padding:0 20px;background:linear-gradient(135deg,#22d3ee,#6366f1);color:white;font-weight:800;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:650px){body{padding:0}.shell{height:100vh;border-radius:0}.hero{margin:0 12px 8px}.chat{padding:14px}.msg{max-width:88%}.composer{padding:12px}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div class="brand"><div class="logo">B</div><span>BioLearn</span></div>
+  <span class="status">Gemini Study AI</span>
+</header>
+<section class="hero">
+  <h1>BioLearn</h1>
+  <p>Focused study assistant for Biology. Ask questions only from this subject.</p>
+  <div class="chips">
+    <span class="chip">Cells</span>
+    <span class="chip">Genetics</span>
+    <span class="chip">Ecology</span>
+    <span class="chip">Study Only</span>
+  </div>
+</section>
+<section id="chat" class="chat">
+  <div class="msg bot">Hi! I’m BioLearn. Ask me a Biology study question.</div>
+</section>
+<div id="typing" class="typing">Thinking…</div>
+<form id="composer" class="composer">
+  <textarea id="message" rows="1" placeholder="Type your Biology question…"></textarea>
+  <button id="send" type="submit">Send</button>
+</form>
+</main>
+<script>
+const form=document.getElementById("composer");
+const input=document.getElementById("message");
+const chat=document.getElementById("chat");
+const send=document.getElementById("send");
+const typing=document.getElementById("typing");
+
+function addMessage(text,role){
+  const el=document.createElement("div");
+  el.className="msg "+role;
+  el.textContent=text;
+  chat.appendChild(el);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+form.addEventListener("submit",async(e)=>{
+  e.preventDefault();
+  const message=input.value.trim();
+  if(!message||send.disabled)return;
+  addMessage(message,"user");
+  input.value="";
+  send.disabled=true;
+  typing.style.display="block";
+  try{
+    const res=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Request failed");
+    addMessage(data.reply,"bot");
+  }catch(err){
+    addMessage(err.message||"Something went wrong. Please try again.","bot");
+  }finally{
+    typing.style.display="none";
+    send.disabled=false;
+    input.focus();
+  }
+});
+
+input.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}
+});
+</script>
+</body>
+</html>
